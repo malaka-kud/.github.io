@@ -10,16 +10,19 @@ const PANELS = {
 const PANEL_NAMES = ['I', 'O', 'L', 'S', 'V'];
 
 function checkBoard() {
+    alert("開始");
     const input = document.getElementById("inputBoard").value.trim();
     const grid = parseInput(input);
 
     // 結果表示
     const resultDiv = document.getElementById("resultBoard");
-
+alert("結果表示まで");
     // 完成可能か不可能か
     if (canCompleteBoard(grid)) {
+        alert("可能");
         resultDiv.value = "完成可能です！\n" + printBoard(grid);
     } else {
+        alert("不可能");
         resultDiv.value = "完成不可能です！";
     }
 }
