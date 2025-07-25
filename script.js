@@ -121,8 +121,7 @@ function printBoard(grid) {
 }
 
 window.onload = () => {
-    document.getElementById("inputBoard").value = `
-xxxxxx
+    document.getElementById("inputBoard").value = `xxxxxx
 xxxxxx
 Lxxxxx
 Lxxxxx
