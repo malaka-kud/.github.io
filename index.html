@@ -11,14 +11,20 @@
     
     <div class="input-area">
         <label for="inputBoard">盤面を入力してください（空白はスペースで表現してください）:</label>
-        <textarea id="inputBoard" placeholder="盤面を入力してください。空白はスペースで表現してください。"></textarea>
+        <textarea id="inputBoard" placeholder="盤面を入力してください。空白はスペースで表現してください。" rows="6" cols="20"></textarea>
         <br>
         <button onclick="checkBoard()">盤面検証</button>
+
+        <!-- ✅ 入力クリアボタン -->
+        <button onclick="clearInput()">入力クリア</button>
+
+        <!-- ✅ Xで埋めるボタン -->
+        <button onclick="fillWithX()">Xで埋める</button>
     </div>
 
     <div class="input-area">
         <label for="resultBoard">結果:</label>
-        <textarea id="resultBoard" readonly></textarea>
+        <textarea id="resultBoard" readonly rows="6" cols="20"></textarea>
     </div>
 
     <script src="script.js"></script>
