@@ -110,7 +110,7 @@ function countFilledCells(grid) {
 function printBoard(grid) {
     let boardText = "";
     for (let i = 0; i < 5; i++) {
-        boardText += grid[i].join('') + "\n";
+        boardText += grid[i].map(cell => cell === '.' ? 'X' : cell).join('') + "\n";
     }
     return boardText;
 }
