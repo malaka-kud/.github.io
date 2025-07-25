@@ -11,17 +11,43 @@ const PANEL_NAMES = ['I', 'O', 'L', 'S', 'V'];
 
 function checkBoard() {
     const input = document.getElementById("inputBoard").value.trim();
+    const rawRows = input.split("\n").map(row => row.trim().toUpperCase());
+    const resultDiv = document.getElementById("resultBoard");
+
+    // 🔸 エラー出力は resultBoard に出す
+    // 1. 行数チェック
+    if (rawRows.length !== 5) {
+        resultDiv.value = "エラー: 行数が不正です。盤面は5行である必要があります。";
+        return;
+    }
+
+    // 2. 列数・文字チェック
+    const allowedChars = ['I', 'O', 'L', 'S', 'V', 'X', ' '];
+    for (let i = 0; i < rawRows.length; i++) {
+        if (rawRows[i].length !== 6) {
+            resultDiv.value = `エラー: 第 ${i + 1} 行の文字数が ${rawRows[i].length} 文字です。各行は6文字である必要があります。`;
+            return;
+        }
+
+        for (let j = 0; j < 6; j++) {
+            const ch = rawRows[i][j];
+            if (!allowedChars.includes(ch)) {
+                resultDiv.value = `エラー: 不正な文字「${ch}」が含まれています。使用可能な文字は I, O, L, S, V, X または空白です。`;
+                return;
+            }
+        }
+    }
+
+    // 🔸 正常時の処理
     const grid = parseInput(input);
 
-    // 結果表示
-    const resultDiv = document.getElementById("resultBoard");
-    // 完成可能か不可能か
     if (canCompleteBoard(grid)) {
         resultDiv.value = "完成可能です！\n" + printBoard(grid);
     } else {
         resultDiv.value = "完成不可能です！";
     }
 }
+
 
 function parseInput(input) {
     const rows = input.split("\n").map(row => row.trim().toUpperCase());
