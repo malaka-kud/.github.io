@@ -10,34 +10,30 @@ const PANELS = {
 const PANEL_NAMES = ['I', 'O', 'L', 'S', 'V'];
 
 function checkBoard() {
-    alert("開始");
     const input = document.getElementById("inputBoard").value.trim();
     const grid = parseInput(input);
 
     // 結果表示
     const resultDiv = document.getElementById("resultBoard");
-alert("結果表示まで");
     // 完成可能か不可能か
     if (canCompleteBoard(grid)) {
-        alert("可能");
         resultDiv.value = "完成可能です！\n" + printBoard(grid);
     } else {
-        alert("不可能");
         resultDiv.value = "完成不可能です！";
     }
 }
 
 function parseInput(input) {
-    const rows = input.split("\n").map(row => row.trim());
+    const rows = input.split("\n").map(row => row.trim().toUpperCase());
     const grid = [];
 
     for (let i = 0; i < 5; i++) {
-        const row = rows[i] || ""; // 行が不足していたら空文字
+        const row = rows[i] || ""; // 行不足対応
         const cells = [];
 
         for (let j = 0; j < 6; j++) {
-            const char = row[j] || 'x'; // 列が足りない場合は 'x' 扱い
-            cells.push(char === 'x' ? '.' : char);
+            const char = row[j] || 'X'; // 列不足対応
+            cells.push(char === 'X' ? '.' : char);
         }
 
         grid.push(cells);
@@ -45,7 +41,6 @@ function parseInput(input) {
 
     return grid;
 }
-
 function canCompleteBoard(grid) {
     const filledCells = countFilledCells(grid);
 
