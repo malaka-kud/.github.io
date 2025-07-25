@@ -31,9 +31,17 @@ function parseInput(input) {
     const rows = input.split("\n").map(row => row.trim());
     const grid = [];
 
-    rows.forEach(row => {
-        grid.push(row.split('').map(cell => cell === ' ' ? '.' : cell));
-    });
+    for (let i = 0; i < 5; i++) {
+        const row = rows[i] || ""; // 行が不足していたら空文字
+        const cells = [];
+
+        for (let j = 0; j < 6; j++) {
+            const char = row[j] || 'x'; // 列が足りない場合は 'x' 扱い
+            cells.push(char === 'x' ? '.' : char);
+        }
+
+        grid.push(cells);
+    }
 
     return grid;
 }
@@ -112,13 +120,12 @@ function printBoard(grid) {
     return boardText;
 }
 
-// 入力例
 window.onload = () => {
     document.getElementById("inputBoard").value = `
-       
-       
-L    
-L    
-LL    
-    `;
+xxxxxx
+xxxxxx
+Lxxxxx
+Lxxxxx
+LLxxxx
+`;
 }
