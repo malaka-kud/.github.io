@@ -115,6 +115,15 @@ function printBoard(grid) {
     return boardText;
 }
 
+function clearInput() {
+    document.getElementById("inputBoard").value = "";
+ }
+
+function fillWithX() {
+    const filled = Array(5).fill("XXXXXX").join("\n");
+    document.getElementById("inputBoard").value = filled;
+}
+
 window.onload = () => {
     document.getElementById("inputBoard").value = `xxxxxx
 xxxxxx
