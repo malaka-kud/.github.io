@@ -1,0 +1,36 @@
+/* シンプルなスタイル */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+textarea {
+    width: 80%;
+    max-width: 600px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 16px;
+    padding: 10px;
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.input-area {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+textarea[readonly] {
+    background-color: #f4f4f4;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
