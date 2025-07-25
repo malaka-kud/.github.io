@@ -3,56 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>盤面検証</title>
-    <style>
-        /* シンプルなスタイル */
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-
-        textarea {
-            width: 100%;
-            height: 150px;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 16px;
-            padding: 10px;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        #board {
-            margin-top: 20px;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 16px;
-            white-space: pre;
-            margin: 10px auto;
-        }
-
-        .input-area {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .input-area textarea {
-            width: 80%;
-            max-width: 600px;
-        }
-    </style>
+    <title>盤面検証ツール</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>盤面検証ツール</h1>
@@ -64,134 +16,11 @@
         <button onclick="checkBoard()">盤面検証</button>
     </div>
 
-    <div id="result"></div>
-    <div id="board"></div>
+    <div class="input-area">
+        <label for="resultBoard">結果:</label>
+        <textarea id="resultBoard" readonly></textarea>
+    </div>
 
-    <script>
-        // パネルの形を定義
-        const PANELS = {
-            I: [[0, 0], [0, 1], [0, 2], [0, 3]],
-            O: [[0, 0], [1, 0], [0, 1], [1, 1]],
-            L: [[0, 0], [1, 0], [2, 0], [2, 1]],
-            S: [[0, 0], [1, 0], [1, 1], [2, 1]],
-            V: [[0, 0], [1, 0], [1, 1]]
-        };
-
-        const PANEL_NAMES = ['I', 'O', 'L', 'S', 'V'];
-
-        function checkBoard() {
-            const input = document.getElementById("inputBoard").value.trim();
-            const grid = parseInput(input);
-
-            // 結果表示
-            const resultDiv = document.getElementById("result");
-            const boardDiv = document.getElementById("board");
-
-            // 完成可能か不可能か
-            if (canCompleteBoard(grid)) {
-                resultDiv.textContent = "完成可能です！";
-                printBoard(grid, boardDiv);
-            } else {
-                resultDiv.textContent = "完成不可能です！";
-                boardDiv.textContent = "";
-            }
-        }
-
-        function parseInput(input) {
-            const rows = input.split("\n").map(row => row.trim());
-            const grid = [];
-
-            rows.forEach(row => {
-                grid.push(row.split('').map(cell => cell === ' ' ? '.' : cell));
-            });
-
-            return grid;
-        }
-
-        function canCompleteBoard(grid) {
-            const filledCells = countFilledCells(grid);
-
-            // 25マス以上埋まっているなら完成と見なす
-            if (filledCells >= 25) {
-                return true;
-            }
-
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 6; j++) {
-                    if (grid[i][j] === '.') {
-                        for (let p = 0; p < PANEL_NAMES.length; p++) {
-                            if (canPlace(grid, PANELS[PANEL_NAMES[p]], i, j)) {
-                                placePanel(grid, PANELS[PANEL_NAMES[p]], i, j, PANEL_NAMES[p]);
-                                if (canCompleteBoard(grid)) {
-                                    return true;
-                                }
-                                removePanel(grid, PANELS[PANEL_NAMES[p]], i, j);
-                            }
-                        }
-                        return false; // どのパネルも配置できない場合
-                    }
-                }
-            }
-            return false;
-        }
-
-        function canPlace(grid, panel, row, col) {
-            for (let i = 0; i < panel.length; i++) {
-                const r = row + panel[i][0];
-                const c = col + panel[i][1];
-                if (r < 0 || r >= 5 || c < 0 || c >= 6 || grid[r][c] !== '.') {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function placePanel(grid, panel, row, col, panelName) {
-            for (let i = 0; i < panel.length; i++) {
-                const r = row + panel[i][0];
-                const c = col + panel[i][1];
-                grid[r][c] = panelName;
-            }
-        }
-
-        function removePanel(grid, panel, row, col) {
-            for (let i = 0; i < panel.length; i++) {
-                const r = row + panel[i][0];
-                const c = col + panel[i][1];
-                grid[r][c] = '.';
-            }
-        }
-
-        function countFilledCells(grid) {
-            let count = 0;
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 6; j++) {
-                    if (grid[i][j] !== '.') {
-                        count++;
-                    }
-                }
-            }
-            return count;
-        }
-
-        function printBoard(grid, boardDiv) {
-            let boardText = "";
-            for (let i = 0; i < 5; i++) {
-                boardText += grid[i].join('') + "\n";
-            }
-            boardDiv.textContent = boardText;
-        }
-
-        // 入力例
-        window.onload = () => {
-            document.getElementById("inputBoard").value = `
-               
-               
-L     
-L     
-LL    
-            `;
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
