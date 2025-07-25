@@ -32,7 +32,7 @@ function checkBoard() {
         for (let j = 0; j < 6; j++) {
             const ch = rawRows[i][j];
             if (!allowedChars.includes(ch)) {
-                resultDiv.value = `エラー: 不正な文字「${ch}」が含まれています。使用可能な文字は I, O, L, S, V, X または空白です。`;
+                resultDiv.value = `エラー: 不正な文字「${ch}」が含まれています。使用可能な文字は X,I,O,L,S,V または空白です。`;
                 return;
             }
         }
