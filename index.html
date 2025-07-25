@@ -67,12 +67,17 @@
             const input = document.getElementById("inputBoard").value.trim();
             const grid = parseInput(input);
 
+            // 結果表示
+            const resultDiv = document.getElementById("result");
+            const boardDiv = document.getElementById("board");
+
+            // 完成可能か不可能か
             if (canCompleteBoard(grid)) {
-                document.getElementById("result").textContent = "完成可能です！";
-                printBoard(grid);
+                resultDiv.textContent = "完成可能です！";
+                printBoard(grid, boardDiv);
             } else {
-                document.getElementById("result").textContent = "完成不可能です！";
-                document.getElementById("board").textContent = "";
+                resultDiv.textContent = "完成不可能です！";
+                boardDiv.textContent = "";
             }
         }
 
@@ -153,12 +158,12 @@
             return count;
         }
 
-        function printBoard(grid) {
+        function printBoard(grid, boardDiv) {
             let boardText = "";
             for (let i = 0; i < 5; i++) {
                 boardText += grid[i].join('') + "\n";
             }
-            document.getElementById("board").textContent = boardText;
+            boardDiv.textContent = boardText;
         }
     </script>
 </body>
