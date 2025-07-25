@@ -40,13 +40,29 @@
             white-space: pre;
             margin: 10px auto;
         }
+
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-area textarea {
+            width: 80%;
+            max-width: 600px;
+        }
     </style>
 </head>
 <body>
     <h1>盤面検証ツール</h1>
-    <textarea id="inputBoard" placeholder="盤面を入力してください。空白はスペースで表現してください。"></textarea>
-    <br>
-    <button onclick="checkBoard()">盤面検証</button>
+    
+    <div class="input-area">
+        <label for="inputBoard">盤面を入力してください（空白はスペースで表現してください）:</label>
+        <textarea id="inputBoard" placeholder="盤面を入力してください。空白はスペースで表現してください。"></textarea>
+        <br>
+        <button onclick="checkBoard()">盤面検証</button>
+    </div>
 
     <div id="result"></div>
     <div id="board"></div>
@@ -164,6 +180,17 @@
                 boardText += grid[i].join('') + "\n";
             }
             boardDiv.textContent = boardText;
+        }
+
+        // 入力例
+        window.onload = () => {
+            document.getElementById("inputBoard").value = `
+               
+               
+L     
+L     
+LL    
+            `;
         }
     </script>
 </body>
