@@ -19,8 +19,8 @@ let dragPanelId = null;
 let nextPanelId = 1;
 
 // スマホ用選択中パネル
-let selectedPanelId = null;
-let selectedPanelType = null;
+let selectedPanelId = null;   // 例: "p1" や "palette_I"
+let selectedPanelType = null; // 例: "I"
 
 // 完成不能パネルIDのセット（renderStateに渡すため）
 let impossiblePanelIds = [];
@@ -53,7 +53,7 @@ function createGrid(){
         clearSelection();
       });
 
-      // グリッド上パネルのドラッグ開始を明確に区別（ここでdragPanelId設定）
+      // グリッド上パネルのドラッグ開始（ここでdragPanelId設定）
       cell.addEventListener("dragstart", e => {
         const val = state[r][c];
         if(val){
@@ -69,16 +69,27 @@ function createGrid(){
         const val = state[r][c];
         if(selectedPanelId === null){
           if(val){
+            // 盤面のパネルを選択（移動モード）
             selectedPanelId = val.id;
             selectedPanelType = val.type;
             highlightSelectedPanel();
           }
         } else {
-          if(canPlacePanelAt(selectedPanelType, r, c, selectedPanelId)){
-            movePanel(selectedPanelId);
-            placePanel(selectedPanelType, r, c, selectedPanelId);
+          // 置く処理
+          if(selectedPanelId.startsWith("palette_")){
+            // パレット由来のパネル新規配置
+            if(canPlacePanelAt(selectedPanelType, r, c, null)){
+              placePanel(selectedPanelType, r, c, `p${nextPanelId++}`);
+            }
+            clearSelection();
+          } else {
+            // 既存盤面パネル移動モード
+            if(canPlacePanelAt(selectedPanelType, r, c, selectedPanelId)){
+              movePanel(selectedPanelId);
+              placePanel(selectedPanelType, r, c, selectedPanelId);
+            }
+            clearSelection();
           }
-          clearSelection();
         }
       });
 
@@ -107,11 +118,9 @@ function createPalette(){
 
     // タッチで選択（スマホ用）
     btn.addEventListener("click", () => {
-      if(selectedPanelId && selectedPanelId.startsWith("palette_")){
-        if(selectedPanelId === `palette_${type}`){
-          clearSelection();
-          return;
-        }
+      if(selectedPanelId === `palette_${type}`){
+        clearSelection();
+        return;
       }
       selectedPanelId = `palette_${type}`;
       selectedPanelType = type;
@@ -175,17 +184,23 @@ function renderState(highlightIds=[]){
     cell.className = "cell";
     if(val) cell.classList.add(val.type);
 
-    // 完成不能パネル明るく
+    // 完成不能パネル明るく（CSSクラス）
     if(val && highlightSet.has(val.id)){
       cell.classList.add("highlight");
     } else {
       cell.classList.remove("highlight");
     }
 
-    // スマホ選択中パネルは明るく（filterで）
-    if(selectedPanelId !== null && val && val.id === selectedPanelId){
+    // 選択中パネルは完成不能パネルと同じ見た目にする（highlight + brightness）
+    if(val && (val.id === selectedPanelId)){
+      cell.classList.add("highlight");
       cell.style.filter = "brightness(1.5)";
-    } else {
+    }
+    // 完成不能パネルはfilter明るくも付ける
+    else if(val && highlightSet.has(val.id)){
+      cell.style.filter = "brightness(1.5)";
+    }
+    else {
       cell.style.filter = "";
     }
 
@@ -205,7 +220,7 @@ function renderState(highlightIds=[]){
 
   // パレットのハイライト
   document.querySelectorAll(".panel").forEach(panel=>{
-    if(selectedPanelId === `palette_${panel.dataset.type}`){
+    if(selectedPanelId === `palette_${panel.dataset.type}` || selectedPanelType === panel.dataset.type){
       panel.classList.add("highlight");
     } else {
       panel.classList.remove("highlight");
@@ -239,6 +254,7 @@ function clearGrid(){
 }
 
 // --- ゴミ箱関連 ---
+// ドラッグ＆ドロップ対応
 trash.addEventListener("dragover", e=>{
   e.preventDefault();
   trash.classList.add("over");
@@ -253,6 +269,16 @@ trash.addEventListener("drop", e=>{
     movePanel(dragPanelId);
     dragPanelId = null;
     dragPanelType = null;
+    clearSelection();
+    renderState(impossiblePanelIds);
+  }
+});
+
+// スマホ・タップによる削除対応（盤面パネルのみ）
+trash.addEventListener("click", () => {
+  // パレット由来の選択は削除しない
+  if(selectedPanelId && !selectedPanelId.startsWith("palette_")){
+    movePanel(selectedPanelId);
     clearSelection();
     renderState(impossiblePanelIds);
   }
@@ -379,8 +405,7 @@ function validateGrid(){
       });
       return pos;
     });
-    result.innerHTML = `<strong>完成不能です。以下のパネルを削除すれば完成可能です：</strong><br>`+
-      `パネル位置: ${positions.join(", ")}<br>`+
+    result.innerHTML = `<strong>完成不能です。光ってるパネルを削除すれば完成可能です：</strong><br>`+
       renderFullSizeResult(solution);
     renderState(impossiblePanelIds);
   } else {
@@ -390,6 +415,7 @@ function validateGrid(){
   }
 }
 
+// --- 結果表示の盤面（グリッド下）を描画 ---
 function renderFullSizeResult(grid){
   let html = '<div class="result-grid">';
   for(let r=0; r<GRID_ROWS; r++){
@@ -412,31 +438,6 @@ function getColor(type){
     S:"blue",
     V:"green"
   }[type] || "white";
-}
-
-// --- スマホ選択クリア ---
-function clearSelection(){
-  selectedPanelId = null;
-  selectedPanelType = null;
-  renderState(impossiblePanelIds);
-}
-
-// --- スマホ選択強調 ---
-function highlightSelectedPanel(){
-  renderState(impossiblePanelIds);
-}
-
-// --- クリアボタン ---
-function clearGrid(){
-  for(let r=0; r<GRID_ROWS; r++){
-    for(let c=0; c<GRID_COLS; c++){
-      state[r][c] = null;
-    }
-  }
-  impossiblePanelIds = [];
-  clearSelection();
-  result.innerHTML = "";
-  renderState();
 }
 
 // --- 初期処理 ---
