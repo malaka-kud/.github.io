@@ -112,3 +112,9 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
 }
+
+.bright-I { background-color: #d7b3ff; } /* 明るい紫 */
+.bright-O { background-color: #ff9999; } /* 明るい赤 */
+.bright-L { background-color: #fff3b3; color: black; } /* 明るい黄色 */
+.bright-S { background-color: #99bbff; } /* 明るい青 */
+.bright-V { background-color: #99ff99; } /* 明るい緑 */
