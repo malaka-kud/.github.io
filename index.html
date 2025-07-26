@@ -95,7 +95,7 @@
   
   GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
   グリッド下のパネルからスワイプorドラッグして運んで完成検証を押してください<br>
-  パネルを削除したいときは削除したいパネルをゴミ箱へ動かすか、盤面クリアを押してください<br><br>
+  パネルを削除したいときは削除したいパネルをゴミ箱へ動かしてください<br><br>
 
   <div class="grid" id="grid"></div>
 
@@ -246,33 +246,101 @@
       result.innerHTML = "";
     }
 
-    function validateGrid() {
-      const gridCopy = state.map(row => row.map(cell => cell ? cell.type : '.'));
-      const originalState = state.map(row => row.map(cell => cell ? { ...cell } : null));
+let removablePanelIds = new Set(); // 追加：削除候補パネルIDのセット
 
-      if (canCompleteBoard(gridCopy)) {
-        result.innerHTML = "<strong>完成可能です！</strong>" + renderMiniGrid(gridCopy);
-        return;
-      }
+function validateGrid() {
+  const gridCopy = state.map(row => row.map(cell => cell ? cell.type : '.'));
+  const originalState = state.map(row => row.map(cell => cell ? { ...cell } : null));
 
-      const usedIds = [...new Set(state.flat().filter(x => x).map(x => x.id))];
-      for (const id of usedIds) {
-        const testGrid = originalState.map(row => row.map(cell => cell && cell.id === id ? null : cell));
-        const testGridCopy = testGrid.map(row => row.map(cell => cell ? cell.type : '.'));
-        if (canCompleteBoard(testGridCopy)) {
-          const positions = [];
-          originalState.forEach((row, r) => {
-            row.forEach((cell, c) => {
-              if (cell?.id === id) positions.push(`(${r+1},${c+1})`);
-            });
-          });
-          result.innerHTML = `完成不可能です。\nパネル (${positions.join(', ')}) を削除すれば完成可能です。`;
-          return;
-        }
-      }
+  removablePanelIds.clear();  // リセット
 
-      result.innerHTML = "<strong>完成不可能です。</strong> どの1パネルを削除しても完成不可です。";
+  if (canCompleteBoard(gridCopy)) {
+    result.innerHTML = "<strong>完成可能です！</strong>" + renderMiniGrid(gridCopy);
+    renderState(); // 色クリア表示反映
+    return;
+  }
+
+  const usedIds = [...new Set(state.flat().filter(x => x).map(x => x.id))];
+  let foundRemovable = false;
+
+  for (const id of usedIds) {
+    const testGrid = originalState.map(row => row.map(cell => cell && cell.id === id ? null : cell));
+    const testGridCopy = testGrid.map(row => row.map(cell => cell ? cell.type : '.'));
+    if (canCompleteBoard(testGridCopy)) {
+      removablePanelIds.add(id);
+      foundRemovable = true;
     }
+  }
+
+  if (foundRemovable) {
+    // 削除候補パネルの位置を取得してメッセージ表示
+    let message = "完成不可能です。\n以下のパネルを削除すれば完成可能です。パネルの色が明るくなっています。\n";
+    removablePanelIds.forEach(id => {
+      const positions = [];
+      originalState.forEach((row, r) => {
+        row.forEach((cell, c) => {
+          if (cell?.id === id) positions.push(`(${r+1},${c+1})`);
+        });
+      });
+      message += `パネル ${positions.join(', ')}\n`;
+    });
+    result.innerHTML = message;
+    renderState(); // 色反映
+    return;
+  }
+
+  result.innerHTML = "<strong>完成不可能です。</strong> どの1パネルを削除しても完成不可です。";
+  renderState(); // 色クリア
+}
+
+// renderStateに色を明るくする判定を追加
+function renderState() {
+  document.querySelectorAll(".cell").forEach((cell) => {
+    const r = parseInt(cell.dataset.row);
+    const c = parseInt(cell.dataset.col);
+    const val = state[r][c];
+    cell.textContent = val?.type || "";
+    if (val) {
+      const baseColor = getColor(val.type);
+      if (removablePanelIds.has(val.id)) {
+        // 明るく表示する処理（例：opacity下げる or 色調明るく）
+        cell.style.backgroundColor = lightenColor(baseColor, 0.6);
+      } else {
+        cell.style.backgroundColor = baseColor;
+      }
+      cell.style.color = (val.type === "L" ? "black" : "white");
+      cell.draggable = true;
+      cell.ondragstart = (e) => {
+        dragPanelType = val.type;
+        dragPanelId = val.id;
+      };
+    } else {
+      cell.style.backgroundColor = "white";
+      cell.style.color = "black";
+      cell.textContent = "";
+      cell.draggable = false;
+      cell.ondragstart = null;
+    }
+  });
+}
+
+// 色を明るくする関数（簡易版）
+function lightenColor(color, factor) {
+  // color は基本色名(purple, red など)か CSSカラーコードの簡易対応
+  // 簡単にRGBに変換し、明るくする例
+  const colors = {
+    purple: [128, 0, 128],
+    red: [255, 0, 0],
+    gold: [255, 215, 0],
+    blue: [0, 0, 255],
+    green: [0, 128, 0],
+    white: [255, 255, 255],
+  };
+  let rgb = colors[color] || [200, 200, 200];
+  // 明るくする（255に近づける）
+  rgb = rgb.map(c => Math.min(255, Math.floor(c + (255 - c) * factor)));
+  return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
 
     function renderMiniGrid(grid) {
       let html = '<div class="mini-grid">';
