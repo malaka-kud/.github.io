@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GOGOマフィン大口注文検証ツール</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GOGOマフィン大口注文検証ツール</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>GOGOマフィン大口注文検証ツール</h1>
-  
-  GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
-  グリッド下のパネルからスワイプorドラッグして運んで完成検証を押してください<br>
-  配置済みのパネルを別の位置に動かせます。<br>
-  パネルを削除したいときは削除したいパネルをゴミ箱へ動かすか盤面クリアを押してください<br><br>
+  <p>グリッド下のパネルからドラッグまたはスワイプで配置し、完成検証してください。パネル削除はゴミ箱へ。<br>
+  ４つ以上消す必要がある場合、負荷などの面から3個消しても完成しないと表示されます。</p>
 
-  <div class="grid" id="grid"></div>
+  <div id="grid" class="grid"></div>
 
   <div class="palette">
     <div class="panel I" draggable="true" data-type="I">I</div>
@@ -22,7 +19,7 @@
     <div class="panel L" draggable="true" data-type="L">L</div>
     <div class="panel S" draggable="true" data-type="S">S</div>
     <div class="panel V" draggable="true" data-type="V">V</div>
-    <div class="trash" id="trash">🗑</div>
+    <div id="trash" class="trash">🗑</div>
   </div>
 
   <div class="buttons">
