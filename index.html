@@ -1,44 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOGOマフィン大口注文検証ツール</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <h1>GOGOマフィン大口注文検証ツール</h1>
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>GOGOマフィン大口注文検証ツール</title>
+	    <link rel="stylesheet" href="styles.css">
+	</head>
+	<body>
+	    <h1>GOGOマフィン大口注文検証ツール</h1>
 
-    GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
-    空欄=X<br>
-    紫＝I<br>
-    赤＝O<br>
-    黄＝L<br>
-    青＝S<br>
-    緑＝V<br>
-    （パネルの形とアルファベットを紐つけてます）<br>
-    で6*5を埋めて盤面検証ボタン押したらその先埋めることができるか判定してくれます<br>
-    
-    <div class="input-area">
-        <label for="inputBoard">盤面を入力してください（空白はスペースで表現してください）:</label>
-        <textarea id="inputBoard" placeholder="盤面を入力してください。空白はスペースで表現してください。" rows="6" cols="20"></textarea>
-        <br>
-        <button onclick="checkBoard()">盤面検証</button>
+	    GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
+	    空欄=X<br>
+	    紫＝I<br>
+	    赤＝O<br>
+	    黄＝L<br>
+	    青＝S<br>
+	    緑＝V<br>
+	    （パネルの形とアルファベットを紐つけてます）<br>
+	    で6*5を埋めて盤面検証ボタン押したらその先埋めることができるか判定してくれます<br>
+	    
+	    <div class="input-area">
+	        <label for="inputBoard">盤面を入力してください:</label>
+	        <textarea id="inputBoard" placeholder="盤面を入力してください。" rows="6" cols="20"></textarea>
+	        <br>
+	        <button onclick="checkBoard()">盤面検証</button>
 
-        <!-- ✅ 入力クリアボタン -->
-        <button onclick="clearInput()">入力クリア</button>
+	        <!-- ✅ 入力クリアボタン -->
+	        <button onclick="clearInput()">入力クリア</button>
 
-        <!-- ✅ Xで埋めるボタン -->
-        <button onclick="fillWithX()">Xで埋める</button>
-    </div>
+	        <!-- ✅ Xで埋めるボタン -->
+	        <button onclick="fillWithX()">Xで埋める</button>
+	    </div>
 
-    
+	    
 
-    <div class="input-area">
-        <label for="resultBoard">結果:</label>
-        <textarea id="resultBoard" readonly rows="6" cols="20"></textarea>
-    </div>
+	    <div class="input-area">
+	        <label for="resultBoard">結果:</label>
+	        <textarea id="resultBoard" readonly rows="6" cols="20"></textarea>
+	    </div>
 
-    <script src="script.js"></script>
-</body>
+	    <script src="script.js"></script>
+	</body>
 </html>
