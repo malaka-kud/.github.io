@@ -1,44 +1,337 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-	    <meta charset="UTF-8">
-	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	    <title>GOGOマフィン大口注文検証ツール</title>
-	    <link rel="stylesheet" href="styles.css">
-	</head>
-	<body>
-	    <h1>GOGOマフィン大口注文検証ツール</h1>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOGOマフィン大口注文検証ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 40px);
+      grid-template-rows: repeat(5, 40px);
+      gap: 2px;
+      margin-bottom: 20px;
+    }
+    .cell {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #444;
+      background-color: white;
+      position: relative;
+      text-align: center;
+      font-weight: bold;
+      line-height: 40px;
+    }
+    .palette {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .panel {
+      width: 40px;
+      height: 40px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      cursor: grab;
+    }
+    .panel.I { background-color: purple; }
+    .panel.O { background-color: red; }
+    .panel.L { background-color: gold; color: black; }
+    .panel.S { background-color: blue; }
+    .panel.V { background-color: green; }
+    .trash {
+      width: 40px;
+      height: 40px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .trash.over {
+      background-color: #fdd;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #result {
+      white-space: pre-wrap;
+      margin-top: 10px;
+      max-width: 300px;
+    }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 20px);
+      grid-template-rows: repeat(5, 20px);
+      gap: 1px;
+      margin-top: 10px;
+    }
+    .mini-cell {
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #999;
+    }
+  </style>
+</head>
+<body>
+  <h1>GOGOマフィン大口注文検証ツール</h1>
+  
+  GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
+  グリッド下のパネルからスワイプorドラッグして運んで完成検証を押してください<br>
+  パネルを削除したいときは削除したいパネルをゴミ箱へ動かしてください<br><br>
 
-	    GOGOマフィンの大口注文で完成させられるか調べることのできるツールです<br>
-	    空欄=X<br>
-	    紫＝I<br>
-	    赤＝O<br>
-	    黄＝L<br>
-	    青＝S<br>
-	    緑＝V<br>
-	    （パネルの形とアルファベットを紐つけてます）<br>
-	    で6*5を埋めて盤面検証ボタン押したらその先埋めることができるか判定してくれます<br>
-	    
-	    <div class="input-area">
-	        <label for="inputBoard">盤面を入力してください:</label>
-	        <textarea id="inputBoard" placeholder="盤面を入力してください。" rows="6" cols="20"></textarea>
-	        <br>
-	        <button onclick="checkBoard()">盤面検証</button>
+  <div class="grid" id="grid"></div>
 
-	        <!-- ✅ 入力クリアボタン -->
-	        <button onclick="clearInput()">入力クリア</button>
+  <div class="palette">
+    <div class="panel I" draggable="true" data-type="I">I</div>
+    <div class="panel O" draggable="true" data-type="O">O</div>
+    <div class="panel L" draggable="true" data-type="L">L</div>
+    <div class="panel S" draggable="true" data-type="S">S</div>
+    <div class="panel V" draggable="true" data-type="V">V</div>
+    <div class="trash" id="trash">🗑</div>
+  </div>
 
-	        <!-- ✅ Xで埋めるボタン -->
-	        <button onclick="fillWithX()">Xで埋める</button>
-	    </div>
+  <div class="buttons">
+    <button onclick="validateGrid()">完成検証</button>
+    <button onclick="clearGrid()">盤面クリア</button>
+  </div>
 
-	    
+  <div id="result"></div>
 
-	    <div class="input-area">
-	        <label for="resultBoard">結果:</label>
-	        <textarea id="resultBoard" readonly rows="6" cols="20"></textarea>
-	    </div>
+  <script>
+    const grid = document.getElementById("grid");
+    const trash = document.getElementById("trash");
+    const result = document.getElementById("result");
+    const GRID_ROWS = 5;
+    const GRID_COLS = 6;
 
-	    <script src="script.js"></script>
-	</body>
+    const PANELS = {
+      I: [[0, 0], [0, 1], [0, 2], [0, 3]],
+      O: [[0, 0], [1, 0], [0, 1], [1, 1]],
+      L: [[0, 0], [1, 0], [2, 0], [2, 1]],
+      S: [[0, 0], [1, 0], [1, 1], [2, 1]],
+      V: [[0, 0], [1, 0], [1, 1]]
+    };
+
+    let dragPanelType = null;
+    let dragPanelId = null;
+    let nextPanelId = 1;
+
+    const state = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
+
+    function createGrid() {
+      grid.innerHTML = "";
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          cell.addEventListener("dragover", (e) => e.preventDefault());
+          cell.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const panelType = dragPanelType;
+            const panelId = dragPanelId || `p${nextPanelId++}`;
+            placePanel(panelType, r, c, panelId);
+            dragPanelId = null;
+          });
+
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    document.querySelectorAll(".panel").forEach((panel) => {
+      panel.addEventListener("dragstart", (e) => {
+        dragPanelType = e.target.dataset.type;
+        dragPanelId = null;
+      });
+    });
+
+    trash.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      trash.classList.add("over");
+    });
+    trash.addEventListener("dragleave", () => trash.classList.remove("over"));
+    trash.addEventListener("drop", (e) => {
+      e.preventDefault();
+      trash.classList.remove("over");
+      if (!dragPanelId) return;
+
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (state[r][c]?.id === dragPanelId) {
+            state[r][c] = null;
+          }
+        }
+      }
+      renderState();
+      dragPanelId = null;
+    });
+
+    function placePanel(type, baseRow, baseCol, panelId) {
+      const shape = PANELS[type];
+      if (!shape.every(([dr, dc]) => {
+        const r = baseRow + dr;
+        const c = baseCol + dc;
+        return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && state[r][c] === null;
+      })) return;
+
+      shape.forEach(([dr, dc]) => {
+        const r = baseRow + dr;
+        const c = baseCol + dc;
+        state[r][c] = { type, id: panelId };
+      });
+
+      renderState();
+    }
+
+    function renderState() {
+      document.querySelectorAll(".cell").forEach((cell) => {
+        const r = parseInt(cell.dataset.row);
+        const c = parseInt(cell.dataset.col);
+        const val = state[r][c];
+        cell.textContent = val?.type || "";
+        cell.style.backgroundColor = getColor(val?.type);
+        cell.style.color = val ? (val.type === "L" ? "black" : "white") : "black";
+
+        if (val) {
+          cell.draggable = true;
+          cell.ondragstart = (e) => {
+            dragPanelType = val.type;
+            dragPanelId = val.id;
+          };
+        } else {
+          cell.draggable = false;
+          cell.ondragstart = null;
+        }
+      });
+    }
+
+    function getColor(type) {
+      return {
+        I: "purple",
+        O: "red",
+        L: "gold",
+        S: "blue",
+        V: "green"
+      }[type] || "white";
+    }
+
+    function clearGrid() {
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          state[r][c] = null;
+        }
+      }
+      renderState();
+      result.innerHTML = "";
+    }
+
+    function validateGrid() {
+      const gridCopy = state.map(row => row.map(cell => cell ? cell.type : '.'));
+      const originalState = state.map(row => row.map(cell => cell ? { ...cell } : null));
+
+      if (canCompleteBoard(gridCopy)) {
+        result.innerHTML = "<strong>完成可能です！</strong>" + renderMiniGrid(gridCopy);
+        return;
+      }
+
+      const usedIds = [...new Set(state.flat().filter(x => x).map(x => x.id))];
+      for (const id of usedIds) {
+        const testGrid = originalState.map(row => row.map(cell => cell && cell.id === id ? null : cell));
+        const testGridCopy = testGrid.map(row => row.map(cell => cell ? cell.type : '.'));
+        if (canCompleteBoard(testGridCopy)) {
+          const positions = [];
+          originalState.forEach((row, r) => {
+            row.forEach((cell, c) => {
+              if (cell?.id === id) positions.push(`(${r+1},${c+1})`);
+            });
+          });
+          result.innerHTML = `完成不可能です。\nパネル (${positions.join(', ')}) を削除すれば完成可能です。`;
+          return;
+        }
+      }
+
+      result.innerHTML = "<strong>完成不可能です。</strong> どの1パネルを削除しても完成不可です。";
+    }
+
+    function renderMiniGrid(grid) {
+      let html = '<div class="mini-grid">';
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          const ch = grid[r][c];
+          html += `<div class="mini-cell" style="background-color:${getColor(ch)}; color:${ch === 'L' ? 'black' : 'white'}">${ch === '.' ? 'X' : ch}</div>`;
+        }
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function countFilledCells(grid) {
+      return grid.flat().filter(c => c !== '.').length;
+    }
+
+    function canPlace(grid, panel, row, col) {
+      return panel.every(([dr, dc]) => {
+        const r = row + dr;
+        const c = col + dc;
+        return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && grid[r][c] === '.';
+      });
+    }
+
+    function place(grid, panel, row, col, ch) {
+      panel.forEach(([dr, dc]) => {
+        grid[row + dr][col + dc] = ch;
+      });
+    }
+
+    function remove(grid, panel, row, col) {
+      panel.forEach(([dr, dc]) => {
+        grid[row + dr][col + dc] = '.';
+      });
+    }
+
+    function canCompleteBoard(grid) {
+      const filledCells = countFilledCells(grid);
+      if (filledCells >= 25) return true;
+
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          if (grid[row][col] === '.') {
+            for (const panelName in PANELS) {
+              const panelShape = PANELS[panelName];
+              if (canPlace(grid, panelShape, row, col)) {
+                place(grid, panelShape, row, col, panelName);
+                if (canCompleteBoard(grid)) return true;
+                remove(grid, panelShape, row, col);
+              }
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    createGrid();
+  </script>
+</body>
 </html>
