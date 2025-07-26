@@ -70,29 +70,40 @@ function parseInput(input) {
 function canCompleteBoard(grid) {
     const filledCells = countFilledCells(grid);
 
-    // 25マス以上埋まっているなら完成と見なす
+    // 25マス以上埋まっていれば完成とみなす
     if (filledCells >= 25) {
         return true;
     }
 
-    for (let i = 0; i < 5; i++) {
-        for (let j = 0; j < 6; j++) {
-            if (grid[i][j] === '.') {
+    // 空きマスをすべて走査して試す
+    for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 6; col++) {
+            if (grid[row][col] === '.') {
                 for (let p = 0; p < PANEL_NAMES.length; p++) {
-                    if (canPlace(grid, PANELS[PANEL_NAMES[p]], i, j)) {
-                        placePanel(grid, PANELS[PANEL_NAMES[p]], i, j, PANEL_NAMES[p]);
+                    const panelShape = PANELS[PANEL_NAMES[p]];
+                    if (canPlace(grid, panelShape, row, col)) {
+                        placePanel(grid, panelShape, row, col, PANEL_NAMES[p]);
+
+                        // 再帰して残りのマスを試す
                         if (canCompleteBoard(grid)) {
                             return true;
                         }
-                        removePanel(grid, PANELS[PANEL_NAMES[p]], i, j);
+
+                        // 戻して次の候補を試す
+                        removePanel(grid, panelShape, row, col);
                     }
                 }
-                return false; // どのパネルも配置できない場合
+
+                // どのパネルも置けなかった場合、この空きマスから始める配置では不可能
+                return false;
             }
         }
     }
+
+    // すべてのマスを処理し終えてここに到達したら完成できない
     return false;
 }
+
 
 function canPlace(grid, panel, row, col) {
     for (let i = 0; i < panel.length; i++) {
