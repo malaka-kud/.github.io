@@ -6,46 +6,21 @@ const GRID_ROWS = 5;
 const GRID_COLS = 6;
 
 const PANELS = {
-	I: [
-		[0, 0],
-		[0, 1],
-		[0, 2],
-		[0, 3]
-	],
-	O: [
-		[0, 0],
-		[1, 0],
-		[0, 1],
-		[1, 1]
-	],
-	L: [
-		[0, 0],
-		[1, 0],
-		[2, 0],
-		[2, 1]
-	],
-	S: [
-		[0, 0],
-		[1, 0],
-		[1, 1],
-		[2, 1]
-	],
-	V: [
-		[0, 0],
-		[1, 0],
-		[1, 1]
-	]
+	I: [[0, 0], [0, 1], [0, 2], [0, 3]],
+	O: [[0, 0], [1, 0], [0, 1], [1, 1]],
+	L: [[0, 0], [1, 0], [2, 0], [2, 1]],
+	S: [[0, 0], [1, 0], [1, 1], [2, 1]],
+	V: [[0, 0], [1, 0], [1, 1]]
 };
 
 let dragPanelType = null;
 let dragPanelId = null;
 let nextPanelId = 1;
 
-let touchStartCell = null; // タッチ開始したセル要素
+let selectedPanelType = null;  // スマホで選択中のパネル種別（パレットか盤面）
+let selectedPanelId = null;    // スマホで選択中のパネルID（盤面ならID、パレットはnull）
 
-let state = Array.from({
-	length: GRID_ROWS
-}, () => Array(GRID_COLS).fill(null));
+let state = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
 
 function createGrid() {
 	grid.innerHTML = "";
@@ -56,6 +31,7 @@ function createGrid() {
 			cell.dataset.row = r;
 			cell.dataset.col = c;
 
+			// PCドラッグ関連
 			cell.addEventListener("dragover", (e) => e.preventDefault());
 			cell.addEventListener("drop", (e) => {
 				e.preventDefault();
@@ -65,6 +41,31 @@ function createGrid() {
 				placePanel(dragPanelType, r, c, panelId);
 				dragPanelId = null;
 				dragPanelType = null;
+				clearSelection();
+			});
+
+			// スマホタップ配置関連
+			cell.addEventListener("click", () => {
+				const cellVal = state[r][c];
+				// 何も選択していない場合、盤面のパネルを選択する
+				if (!selectedPanelType) {
+					if (cellVal) {
+						selectedPanelType = cellVal.type;
+						selectedPanelId = cellVal.id;
+						renderState();
+					}
+					return;
+				}
+
+				// パネルが選択されている場合は配置を試みる
+				if (canPlacePanelAt(selectedPanelType, r, c, selectedPanelId)) {
+					// 移動前のパネルがあるなら消す
+					if (selectedPanelId) movePanel(selectedPanelId);
+					// 新規IDはパレットからなら生成、盤面パネルならそのまま使う
+					if (!selectedPanelId) selectedPanelId = `p${nextPanelId++}`;
+					placePanel(selectedPanelType, r, c, selectedPanelId);
+				}
+				clearSelection();
 			});
 
 			grid.appendChild(cell);
@@ -73,13 +74,21 @@ function createGrid() {
 	renderState();
 }
 
-document.querySelectorAll(".panel").forEach((panel) => {
+// パレットのパネルクリックで選択
+document.querySelectorAll(".panel").forEach(panel => {
 	panel.addEventListener("dragstart", (e) => {
 		dragPanelType = e.target.dataset.type;
 		dragPanelId = null;
 	});
+
+	panel.addEventListener("click", () => {
+		selectedPanelType = panel.dataset.type;
+		selectedPanelId = null;
+		renderState();
+	});
 });
 
+// ゴミ箱ドラッグ関連はPC用のまま
 trash.addEventListener("dragover", (e) => {
 	e.preventDefault();
 	trash.classList.add("over");
@@ -92,6 +101,7 @@ trash.addEventListener("drop", (e) => {
 	movePanel(dragPanelId);
 	renderState();
 	dragPanelId = null;
+	clearSelection();
 });
 
 function movePanel(panelId) {
@@ -107,25 +117,44 @@ function movePanel(panelId) {
 function placePanel(type, baseRow, baseCol, panelId) {
 	const shape = PANELS[type];
 	if (!shape.every(([dr, dc]) => {
-			const r = baseRow + dr;
-			const c = baseCol + dc;
-			return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && state[r][c] ===
-				null;
-		})) return;
+		const r = baseRow + dr;
+		const c = baseCol + dc;
+		return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && (state[r][c] === null || state[r][c].id === panelId);
+	})) return;
 
 	shape.forEach(([dr, dc]) => {
 		const r = baseRow + dr;
 		const c = baseCol + dc;
-		state[r][c] = {
-			type, id: panelId
-		};
+		state[r][c] = { type, id: panelId };
 	});
 
 	renderState();
 }
 
+function canPlacePanelAt(type, baseRow, baseCol, panelId) {
+	const shape = PANELS[type];
+	if (!shape.every(([dr, dc]) => {
+		const r = baseRow + dr;
+		const c = baseCol + dc;
+		return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS;
+	})) return false;
+
+	return shape.every(([dr, dc]) => {
+		const r = baseRow + dr;
+		const c = baseCol + dc;
+		const cell = state[r][c];
+		return cell === null || cell.id === panelId;
+	});
+}
+
+function clearSelection() {
+	selectedPanelType = null;
+	selectedPanelId = null;
+	renderState();
+}
+
 function renderState(highlightIds = []) {
-	document.querySelectorAll(".cell").forEach((cell) => {
+	document.querySelectorAll(".cell").forEach(cell => {
 		const r = +cell.dataset.row;
 		const c = +cell.dataset.col;
 		const val = state[r][c];
@@ -133,13 +162,23 @@ function renderState(highlightIds = []) {
 		cell.className = "cell"; // 一旦リセット
 		if (val) cell.classList.add(val.type); // パネル色クラス付与
 
+		// PCのドラッグ対象や複数削除対象の明るさはここで扱う
 		if (val && highlightIds.includes(val.id)) {
-			cell.classList.add("highlight"); // 明るくするクラス
+			cell.classList.add("highlight");
+		}
+
+		// スマホの選択中パネルは明るく表示
+		if (val && selectedPanelId && val.id === selectedPanelId) {
+			cell.classList.add("highlight");
+		}
+		// パレットから選択中のタイプで盤面上の同種パネルは明るく表示（複数ある場合）
+		if (val && selectedPanelType && !selectedPanelId && val.type === selectedPanelType) {
+			cell.classList.add("highlight");
 		}
 
 		if (val) {
 			cell.draggable = true;
-			cell.ondragstart = (e) => {
+			cell.ondragstart = e => {
 				dragPanelType = val.type;
 				dragPanelId = val.id;
 			};
@@ -150,12 +189,13 @@ function renderState(highlightIds = []) {
 	});
 }
 
+// --- 以下は以前の機能：完成検証や削除組み合わせのまま --- //
+
 function clearGrid() {
-	state = Array.from({
-		length: GRID_ROWS
-	}, () => Array(GRID_COLS).fill(null));
+	state = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null));
 	renderState();
 	result.innerHTML = "";
+	clearSelection();
 }
 
 // 全ての組み合わせを列挙する関数（n個選ぶ）
@@ -179,8 +219,7 @@ function combinations(arr, n) {
 
 function validateGrid() {
 	const gridCopy = state.map(row => row.map(cell => cell ? cell.type : '.'));
-	const panelIds = [...new Set(state.flat().filter(cell => cell).map(cell =>
-		cell.id))];
+	const panelIds = [...new Set(state.flat().filter(cell => cell).map(cell => cell.id))];
 
 	// 1. 削除なしで完成可能か試す
 	let solution = [];
@@ -213,7 +252,7 @@ function validateGrid() {
 			const pos = [];
 			state.forEach((row, r) => {
 				row.forEach((cell, c) => {
-					if (cell && cell.id === id) pos.push(`(${r+1},${c+1})`);
+					if (cell && cell.id === id) pos.push(`(${r + 1},${c + 1})`);
 				});
 			});
 			return pos;
@@ -230,8 +269,7 @@ function validateGrid() {
 }
 
 function removePanels(grid, removeIds) {
-	const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(
-		'.'));
+	const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill('.'));
 	for (let r = 0; r < GRID_ROWS; r++) {
 		for (let c = 0; c < GRID_COLS; c++) {
 			const cell = state[r][c];
@@ -242,31 +280,12 @@ function removePanels(grid, removeIds) {
 	}
 	return newGrid;
 }
-
-
-// 指定したパネルID複数を '.' に置き換えた盤面を返す関数
-function removePanels(grid, removeIds) {
-	// 元のgridはパネル種別なのでidを使うためstateを参照する
-	const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(
-		'.'));
-	for (let r = 0; r < GRID_ROWS; r++) {
-		for (let c = 0; c < GRID_COLS; c++) {
-			const cell = state[r][c];
-			if (cell && !removeIds.includes(cell.id)) {
-				newGrid[r][c] = cell.type;
-			}
-		}
-	}
-	return newGrid;
-}
-
 
 function canPlace(grid, panel, row, col) {
 	return panel.every(([dr, dc]) => {
 		const r = row + dr;
 		const c = col + dc;
-		return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && grid[r][c] ===
-			'.';
+		return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS && grid[r][c] === '.';
 	});
 }
 
