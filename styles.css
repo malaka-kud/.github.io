@@ -5,6 +5,7 @@ body {
   align-items: center;
   padding: 20px;
 }
+
 .grid {
   display: grid;
   grid-template-columns: repeat(6, 40px);
@@ -12,6 +13,7 @@ body {
   gap: 2px;
   margin-bottom: 20px;
 }
+
 .cell {
   width: 40px;
   height: 40px;
@@ -22,12 +24,29 @@ body {
   font-weight: bold;
   line-height: 40px;
   user-select: none;
+  cursor: default;
 }
+
+/* パネルの色 */
+.panel.I, .cell.I { background-color: purple; color: white; }
+.panel.O, .cell.O { background-color: red; color: white; }
+.panel.L, .cell.L { background-color: gold; color: black; }
+.panel.S, .cell.S { background-color: blue; color: white; }
+.panel.V, .cell.V { background-color: green; color: white; }
+
+/* 明るく薄い色にする highlightクラス */
+.cell.highlight.I { background-color: #cbaaff; color: black; }  /* 薄い紫 */
+.cell.highlight.O { background-color: #ff9999; color: black; }  /* 薄い赤 */
+.cell.highlight.L { background-color: #fff7aa; color: black; }  /* 薄いゴールド */
+.cell.highlight.S { background-color: #99bbff; color: black; }  /* 薄い青 */
+.cell.highlight.V { background-color: #aaffaa; color: black; }  /* 薄い緑 */
+
 .palette {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
 }
+
 .panel {
   width: 40px;
   height: 40px;
@@ -36,15 +55,10 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: white;
   cursor: grab;
   user-select: none;
 }
-.panel.I { background-color: purple; }
-.panel.O { background-color: red; }
-.panel.L { background-color: gold; color: black; }
-.panel.S { background-color: blue; }
-.panel.V { background-color: green; }
+
 .trash {
   width: 40px;
   height: 40px;
@@ -55,32 +69,46 @@ body {
   cursor: pointer;
   user-select: none;
 }
+
 .trash.over {
   background-color: #fdd;
 }
+
 .buttons {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
 }
+
 #result {
   white-space: pre-wrap;
   margin-top: 10px;
   max-width: 300px;
+  font-weight: bold;
 }
-.mini-grid {
+
+/* 完成図表示用 */
+.result-grid {
   display: grid;
-  grid-template-columns: repeat(6, 20px);
-  grid-template-rows: repeat(5, 20px);
-  gap: 1px;
+  grid-template-columns: repeat(6, 40px);
+  grid-template-rows: repeat(5, 40px);
+  gap: 2px;
   margin-top: 10px;
 }
-.mini-cell {
-  width: 20px;
-  height: 20px;
+
+.result-cell {
+  width: 40px;
+  height: 40px;
   text-align: center;
-  line-height: 20px;
-  font-size: 12px;
+  line-height: 40px;
+  font-size: 16px;
   font-weight: bold;
-  border: 1px solid #999;
+  border: 1px solid #444;
+}
+
+.cell {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
