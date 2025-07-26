@@ -8,23 +8,16 @@
 </head>
 <body>
   <h1>GOGOマフィン大口注文検証ツール</h1>
-  <p>グリッド下のパネルからドラッグまたはスワイプで配置し、完成検証してください。パネル削除はゴミ箱へ。<br>
-  ４つ以上消す必要がある場合、負荷などの面から3個消しても完成しないと表示されます。</p>
+  <p>グリッド下のパネルからドラッグまたはスワイプで配置し、完成検証してください。パネル削除はゴミ箱へ。</p>
 
   <div id="grid" class="grid"></div>
 
-  <div class="palette">
-    <div class="panel I" draggable="true" data-type="I">I</div>
-    <div class="panel O" draggable="true" data-type="O">O</div>
-    <div class="panel L" draggable="true" data-type="L">L</div>
-    <div class="panel S" draggable="true" data-type="S">S</div>
-    <div class="panel V" draggable="true" data-type="V">V</div>
-    <div id="trash" class="trash">🗑</div>
-  </div>
+  <div id="palette" class="palette"></div>
 
-  <div class="buttons">
+  <div class="controls">
     <button onclick="validateGrid()">完成検証</button>
     <button onclick="clearGrid()">盤面クリア</button>
+    <div id="trash" class="trash">🗑 ゴミ箱</div>
   </div>
 
   <div id="result"></div>
