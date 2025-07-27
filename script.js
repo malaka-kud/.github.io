@@ -11,7 +11,7 @@ const PANELS = {
   O: [[0,0],[1,0],[0,1],[1,1]],
   L: [[0,0],[1,0],[2,0],[2,1]],
   S: [[0,0],[1,0],[1,1],[2,1]],
-  V: [[0,0],[1,0],[1,1]]
+  V: [[0,0], [1,0], [1,1]]
 };
 
 let dragPanelType = null;
@@ -340,32 +340,74 @@ function countFilledCells(grid){
 }
 
 // --- 盤面完成可能判定 ---
+const requiredCells = 25;  // 25マス以上埋まれば完成と判定
+const panelTypes = Object.keys(PANELS);
+
+// --- 盤面完成可能判定 ---
 function canCompleteBoard(grid, solution = []) {
   const filled = countFilledCells(grid);
-  if (filled >= 25) {
-    // 25マス以上なら解とみなす
+  if (filled >= requiredCells) {
     solution.length = 0;
-    for (let r = 0; r < GRID_ROWS; r++) solution.push([...grid[r]]);
+    for (let r = 0; r < GRID_ROWS; r++) {
+      solution.push([...grid[r]]);
+    }
     return true;
   }
 
   for (let r = 0; r < GRID_ROWS; r++) {
     for (let c = 0; c < GRID_COLS; c++) {
       if (grid[r][c] === '.') {
-        for (const pn in PANELS) {
-          if (canPlace(grid, PANELS[pn], r, c)) {
-            place(grid, PANELS[pn], r, c, pn);
+        let canPlaceAny = false;
+        for (const t of panelTypes) {
+          const shape = PANELS[t];
+          if (canPlace(grid, shape, r, c)) {
+            canPlaceAny = true;
+            place(grid, shape, r, c, t);
             if (canCompleteBoard(grid, solution)) return true;
-            remove(grid, PANELS[pn], r, c);
+            remove(grid, shape, r, c);
           }
         }
-        // パネルが置けなかったらこの分岐でfalseを返す
-        return false;
+        // ここで即falseにせず、空白セルをスキップして次を探す
+        if (!canPlaceAny) {
+          return canCompleteBoardSkipCell(grid, solution, r, c);
+        }
       }
     }
   }
   return false;
 }
+
+// 空白セルをスキップしながら再帰を続けるヘルパー関数例
+function canCompleteBoardSkipCell(grid, solution, startRow, startCol) {
+  for (let rr = startRow; rr < GRID_ROWS; rr++) {
+    for (let cc = (rr === startRow ? startCol + 1 : 0); cc < GRID_COLS; cc++) {
+      if (grid[rr][cc] === '.') {
+        let canPlaceAny = false;
+        for (const t of panelTypes) {
+          const shape = PANELS[t];
+          if (canPlace(grid, shape, rr, cc)) {
+            canPlaceAny = true;
+            place(grid, shape, rr, cc, t);
+            if (canCompleteBoard(grid, solution)) return true;
+            remove(grid, shape, rr, cc);
+          }
+        }
+        if (!canPlaceAny) {
+          return false;
+        }
+      }
+    }
+  }
+
+  // もしここまで来たら空白なし、つまり完成可能
+  solution.length = 0;
+  for (let r = 0; r < GRID_ROWS; r++) {
+    solution.push([...grid[r]]);
+  }
+  return true;
+}
+
+
 
 
 // --- 完成検証 ---
