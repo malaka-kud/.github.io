@@ -340,28 +340,33 @@ function countFilledCells(grid){
 }
 
 // --- 盤面完成可能判定 ---
-function canCompleteBoard(grid, solution=[]){
-  if(countFilledCells(grid) >= 25){
+function canCompleteBoard(grid, solution = []) {
+  const filled = countFilledCells(grid);
+  if (filled >= 25) {
+    // 25マス以上なら解とみなす
     solution.length = 0;
-    for(let r=0; r<GRID_ROWS; r++) solution.push([...grid[r]]);
+    for (let r = 0; r < GRID_ROWS; r++) solution.push([...grid[r]]);
     return true;
   }
-  for(let r=0; r<GRID_ROWS; r++){
-    for(let c=0; c<GRID_COLS; c++){
-      if(grid[r][c] === '.'){
-        for(const pn in PANELS){
-          if(canPlace(grid, PANELS[pn], r, c)){
+
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      if (grid[r][c] === '.') {
+        for (const pn in PANELS) {
+          if (canPlace(grid, PANELS[pn], r, c)) {
             place(grid, PANELS[pn], r, c, pn);
-            if(canCompleteBoard(grid, solution)) return true;
+            if (canCompleteBoard(grid, solution)) return true;
             remove(grid, PANELS[pn], r, c);
           }
         }
+        // パネルが置けなかったらこの分岐でfalseを返す
         return false;
       }
     }
   }
   return false;
 }
+
 
 // --- 完成検証 ---
 function validateGrid(){
