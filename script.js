@@ -368,13 +368,13 @@ function canCompleteBoard(grid, solution = []) {
           }
         }
         // ここで即falseにせず、空白セルをスキップして次を探す
-        if (!canPlaceAny) {
-          return canCompleteBoardSkipCell(grid, solution, r, c);
-        }
+        //if (!canPlaceAny) {
+        //  return canCompleteBoardSkipCell(grid, solution, r, c);
+        //}
       }
     }
   }
-  return false;
+  //return false;
 }
 
 // 空白セルをスキップしながら再帰を続けるヘルパー関数例
@@ -406,9 +406,6 @@ function canCompleteBoardSkipCell(grid, solution, startRow, startCol) {
   }
   return true;
 }
-
-
-
 
 // --- 完成検証 ---
 function validateGrid(){
