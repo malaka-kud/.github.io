@@ -14,6 +14,14 @@ const PANELS = {
   V: [[0,0], [1,0], [1,1]]
 };
 
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 let dragPanelType = null;
 let dragPanelId = null;
 let nextPanelId = 1;
@@ -341,7 +349,7 @@ function countFilledCells(grid){
 
 // --- 盤面完成可能判定 ---
 const requiredCells = 25;  // 25マス以上埋まれば完成と判定
-const panelTypes = Object.keys(PANELS);
+var panelTypes = Object.keys(PANELS);
 
 // --- 盤面完成可能判定 ---
 function canCompleteBoard(grid, solution = []) {
@@ -409,6 +417,8 @@ function canCompleteBoardSkipCell(grid, solution, startRow, startCol) {
 
 // --- 完成検証 ---
 function validateGrid(){
+  panelTypes = shuffle(["I", "O", "L", "S", "V"]);
+
   const gridCopy = state.map(row => row.map(cell => cell ? cell.type : '.'));
   const panelIds = [...new Set(state.flat().filter(c=>c).map(c=>c.id))];
 
@@ -449,7 +459,7 @@ function validateGrid(){
       });
       return pos;
     });
-    result.innerHTML = `<strong>完成不能です。光ってるパネルを削除すれば完成可能です：</strong><br>`+
+    result.innerHTML = `<strong>完成不能です。上の図の光ってるパネルを削除すれば完成可能です：</strong><br>`+
       renderFullSizeResult(solution);
     renderState(impossiblePanelIds);
   } else {
