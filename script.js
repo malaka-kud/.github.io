@@ -1,3 +1,10 @@
+/***** 変更点一覧 ***********************************************
+1. PANELS に新しい O（3×2）を追加
+2. 既存の O は "o" に改名
+3. パレットと描画処理が新しい O / 旧 o を正しく扱うよう修正
+4. 色も追加（新O = #ccc）
+***************************************************************/
+
 const grid = document.getElementById("grid");
 const trash = document.getElementById("trash");
 const result = document.getElementById("result");
@@ -6,14 +13,35 @@ const palette = document.getElementById("palette");
 const GRID_ROWS = 5;
 const GRID_COLS = 6;
 
+/*******************************************
+ * ★ パネル定義（変更あり）
+ *   - 新しい O：3×2（6マス）
+ *   - 旧 O は "o" に変更（2×2）
+ *******************************************/
 const PANELS = {
   I: [[0,0],[0,1],[0,2],[0,3]],
-  O: [[0,0],[1,0],[0,1],[1,1]],
+  o: [[0,0],[1,0],[0,1],[1,1]],   // ←旧O（名称変更）
   L: [[0,0],[1,0],[2,0],[2,1]],
   S: [[0,0],[1,0],[1,1],[2,1]],
-  V: [[0,0], [1,0], [1,1]]
+  V: [[0,0],[1,0], [1,1]],
+  O: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]] // ←新O（6マス）
 };
 
+/******************
+ * ★ 色定義変更
+ ******************/
+function getColor(type){
+  return {
+    I:"purple",
+    o:"red",      // 旧O
+    L:"gold",
+    S:"blue",
+    V:"green",
+    O:"#aaaaaa"  // 新O の色（白っぽいグレー）
+  }[type] || "white";
+}
+
+// シャッフル
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -26,16 +54,14 @@ let dragPanelType = null;
 let dragPanelId = null;
 let nextPanelId = 1;
 
-// スマホ用選択中パネル
-let selectedPanelId = null;   // 例: "p1" や "palette_I"
-let selectedPanelType = null; // 例: "I"
+let selectedPanelId = null;
+let selectedPanelType = null;
 
-// 完成不能パネルIDのセット（renderStateに渡すため）
 let impossiblePanelIds = [];
 
 const state = Array.from({length: GRID_ROWS}, () => Array(GRID_COLS).fill(null));
 
-// --- グリッド初期化 ---
+/************ グリッド初期化 ************/
 function createGrid(){
   grid.innerHTML = "";
   for(let r=0; r<GRID_ROWS; r++){
@@ -45,13 +71,11 @@ function createGrid(){
       cell.dataset.row = r;
       cell.dataset.col = c;
 
-      // PCドラッグ移動対応
       cell.addEventListener("dragover", e => e.preventDefault());
       cell.addEventListener("drop", e => {
         e.preventDefault();
         if(!dragPanelType) return;
 
-        // 移動の場合は一度移動元クリア
         if(dragPanelId) movePanel(dragPanelId);
 
         placePanel(dragPanelType, r, c, dragPanelId || `p${nextPanelId++}`);
@@ -61,37 +85,31 @@ function createGrid(){
         clearSelection();
       });
 
-      // グリッド上パネルのドラッグ開始（ここでdragPanelId設定）
       cell.addEventListener("dragstart", e => {
         const val = state[r][c];
         if(val){
           dragPanelType = val.type;
           dragPanelId = val.id;
-          // 盤面上のパネルドラッグ中は選択解除
           clearSelection();
         }
       });
 
-      // スマホ・クリックで選択・配置（タッチの代替）
+      // スマホ tap 版
       cell.addEventListener("click", () => {
         const val = state[r][c];
         if(selectedPanelId === null){
           if(val){
-            // 盤面のパネルを選択（移動モード）
             selectedPanelId = val.id;
             selectedPanelType = val.type;
             highlightSelectedPanel();
           }
         } else {
-          // 置く処理
           if(selectedPanelId.startsWith("palette_")){
-            // パレット由来のパネル新規配置
             if(canPlacePanelAt(selectedPanelType, r, c, null)){
               placePanel(selectedPanelType, r, c, `p${nextPanelId++}`);
             }
             clearSelection();
           } else {
-            // 既存盤面パネル移動モード
             if(canPlacePanelAt(selectedPanelType, r, c, selectedPanelId)){
               movePanel(selectedPanelId);
               placePanel(selectedPanelType, r, c, selectedPanelId);
@@ -107,7 +125,7 @@ function createGrid(){
   renderState();
 }
 
-// --- パレット初期化 ---
+/************ パレット生成（新Oも表示） ************/
 function createPalette(){
   palette.innerHTML = "";
   for(const type in PANELS){
@@ -117,14 +135,12 @@ function createPalette(){
     btn.draggable = true;
     btn.dataset.type = type;
 
-    // パレットのパネルをドラッグ開始したら typeセット
     btn.addEventListener("dragstart", e => {
       dragPanelType = e.target.dataset.type;
       dragPanelId = null;
       clearSelection();
     });
 
-    // タッチで選択（スマホ用）
     btn.addEventListener("click", () => {
       if(selectedPanelId === `palette_${type}`){
         clearSelection();
@@ -139,7 +155,7 @@ function createPalette(){
   }
 }
 
-// --- 盤面にパネルを置けるか判定 ---
+/************ 配置判定 ************/
 function canPlacePanelAt(type, row, col, panelId){
   const shape = PANELS[type];
   if(!shape.every(([dr,dc])=>{
@@ -156,7 +172,6 @@ function canPlacePanelAt(type, row, col, panelId){
   });
 }
 
-// --- 盤面上のパネルを消す ---
 function movePanel(panelId){
   for(let r=0; r<GRID_ROWS; r++){
     for(let c=0; c<GRID_COLS; c++){
@@ -167,7 +182,6 @@ function movePanel(panelId){
   }
 }
 
-// --- 盤面にパネルを配置 ---
 function placePanel(type, baseRow, baseCol, panelId){
   if(!canPlacePanelAt(type, baseRow, baseCol, panelId)) return;
   const shape = PANELS[type];
@@ -179,7 +193,7 @@ function placePanel(type, baseRow, baseCol, panelId){
   renderState(impossiblePanelIds);
 }
 
-// --- 画面表示更新 ---
+/************ 画面表示 ************/
 function renderState(highlightIds=[]){
   const highlightSet = new Set(highlightIds);
 
@@ -192,27 +206,13 @@ function renderState(highlightIds=[]){
     cell.className = "cell";
     if(val) cell.classList.add(val.type);
 
-    // 完成不能パネル明るく（CSSクラス）
     if(val && highlightSet.has(val.id)){
       cell.classList.add("highlight");
+      //cell.style.filter = "brightness(1.5)";
     } else {
-      cell.classList.remove("highlight");
+      //cell.style.filter = "";
     }
 
-    // 選択中パネルは完成不能パネルと同じ見た目にする（highlight + brightness）
-    if(val && (val.id === selectedPanelId)){
-      cell.classList.add("highlight");
-      cell.style.filter = "brightness(1.5)";
-    }
-    // 完成不能パネルはfilter明るくも付ける
-    else if(val && highlightSet.has(val.id)){
-      cell.style.filter = "brightness(1.5)";
-    }
-    else {
-      cell.style.filter = "";
-    }
-
-    // ドラッグ可能設定
     if(val){
       cell.draggable = true;
       cell.ondragstart = e => {
@@ -226,9 +226,8 @@ function renderState(highlightIds=[]){
     }
   });
 
-  // パレットのハイライト
   document.querySelectorAll(".panel").forEach(panel=>{
-    if(selectedPanelId === `palette_${panel.dataset.type}` || selectedPanelType === panel.dataset.type){
+    if(selectedPanelId === `palette_${panel.dataset.type}`){
       panel.classList.add("highlight");
     } else {
       panel.classList.remove("highlight");
@@ -236,19 +235,17 @@ function renderState(highlightIds=[]){
   });
 }
 
-// --- スマホ用パネル選択明るく ---
 function highlightSelectedPanel(){
   renderState(impossiblePanelIds);
 }
 
-// --- 選択クリア ---
 function clearSelection(){
   selectedPanelId = null;
   selectedPanelType = null;
   renderState(impossiblePanelIds);
 }
 
-// --- 盤面クリア ---
+/************ 盤面クリア ************/
 function clearGrid(){
   for(let r=0; r<GRID_ROWS; r++){
     for(let c=0; c<GRID_COLS; c++){
@@ -261,15 +258,12 @@ function clearGrid(){
   renderState();
 }
 
-// --- ゴミ箱関連 ---
-// ドラッグ＆ドロップ対応
+/************ ゴミ箱 ************/
 trash.addEventListener("dragover", e=>{
   e.preventDefault();
   trash.classList.add("over");
 });
-trash.addEventListener("dragleave", ()=>{
-  trash.classList.remove("over");
-});
+trash.addEventListener("dragleave", ()=>trash.classList.remove("over"));
 trash.addEventListener("drop", e=>{
   e.preventDefault();
   trash.classList.remove("over");
@@ -281,10 +275,7 @@ trash.addEventListener("drop", e=>{
     renderState(impossiblePanelIds);
   }
 });
-
-// スマホ・タップによる削除対応（盤面パネルのみ）
 trash.addEventListener("click", () => {
-  // パレット由来の選択は削除しない
   if(selectedPanelId && !selectedPanelId.startsWith("palette_")){
     movePanel(selectedPanelId);
     clearSelection();
@@ -476,7 +467,7 @@ function renderFullSizeResult(grid){
     for(let c=0; c<GRID_COLS; c++){
       const ch = grid[r][c];
       const bg = getColor(ch);
-      const color = ch==='L' ? 'black' : 'white';
+      const color = (ch==='L' || ch==='O') ? 'black' : 'white';
       html += `<div class="result-cell" style="background-color:${bg}; color:${color}">${ch==='.'?'X':ch}</div>`;
     }
   }
@@ -487,10 +478,11 @@ function renderFullSizeResult(grid){
 function getColor(type){
   return {
     I:"purple",
-    O:"red",
+    o:"red",
     L:"gold",
     S:"blue",
-    V:"green"
+    V:"green",
+    O:"#aaaaaa"
   }[type] || "white";
 }
 
