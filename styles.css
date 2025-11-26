@@ -84,20 +84,22 @@ body {
 
 
 .highlight {
-  box-shadow: inset 0 0 10px 5px rgba(255,255,255,0.7);
+  box-shadow: inset 0 0 12px 10px rgba(255,255,255,0.7);
 }
 
 .I { background-color: purple; color: white; }
-.O { background-color: red; color: white; }
+.o { background-color: red; color: white; }
 .L { background-color: gold; color: black; }
 .S { background-color: blue; color: white; }
 .V { background-color: green; color: white; }
+.O { background-color: #aaaaaa; color: black; }
 
 .light-I { background-color: plum; color: white; }
-.light-O { background-color: pink; color: white; }
+.light-o {background-color: pink; color: white; }
 .light-L { background-color: khaki; color: black; }
 .light-S { background-color: lightblue; color: white; }
 .light-V { background-color: lightgreen; color: white; }
+.light-O { background-color: #aaaaaaa; color: black; }
 
 
 .panel.highlight {
