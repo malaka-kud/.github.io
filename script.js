@@ -117,6 +117,7 @@ function createGrid(){
             }
             clearSelection();
           }
+            impossiblePanelIds = [];
             renderState();
         }
       });
