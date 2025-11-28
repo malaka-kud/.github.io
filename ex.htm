@@ -9,7 +9,8 @@
   h1{font-size:18px}
   .grid{display:grid;grid-template-columns:repeat(6,36px);grid-template-rows:repeat(5,36px);gap:4px;margin:12px 0}
   .cell{width:36px;height:36px;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-weight:700}
-  .I{background:repeating-linear-gradient(45deg,#9b59b6,#9b59b6 8px,#7d3f98 8px,#7d3f98 16px);color:white}
+//  .I{background:repeating-linear-gradient(45deg,#9b59b6,#9b59b6 8px,#7d3f98 8px,#7d3f98 16px);color:white}
+  .I{background:#9b59b6;color:white}
   .o{background:#ff5555;color:#222}
   .L{background:gold;color:black}
   .S{background:#3498db;color:white}
@@ -20,7 +21,7 @@
   .result-grid{display:grid;grid-template-columns:repeat(6,28px);grid-template-rows:repeat(5,28px);gap:3px}
   .result-cell{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border-radius:2px}
   .info{margin-top:8px;font-size:14px}
-  input[type="text"]{width:240px;padding:6px}
+  input[type="text"], input[type="number"]{padding:6px}
   button{padding:6px 10px;margin-left:6px}
 </style>
 </head>
@@ -31,7 +32,13 @@
 
   <div class="controls">
     <label>パネル文字列：</label>
-    <input id="panelInput" type="text" placeholder="例: LLSSIO" />
+    <input id="panelInput" type="text" placeholder="例: LLSSIO" style="width:200px;"/>
+    
+    <!-- ★ 追加：埋めるマス数 -->
+    <label style="margin-left:12px;">埋めたいマス数：</label>
+    <input id="fillMin" type="number" min="0" max="30" value="25" style="width:60px;">
+    <span>～ 30</span>
+
     <button id="runBtn">文字列から完成を探す</button>
     <button id="clearBtnL">文字クリア</button>
     <button id="clearBtn">結果クリア</button>
@@ -39,8 +46,8 @@
 
   <div id="result"></div>
 
-  <script>
-/* ====== 定義（ユーザー指定通り） ====== */
+<script>
+/* ====== 定義 ====== */
 const GRID_ROWS = 5;
 const GRID_COLS = 6;
 
@@ -50,17 +57,13 @@ const PANELS = {
   L: [[0,0],[1,0],[2,0],[2,1]],
   S: [[0,0],[1,0],[1,1],[2,1]],
   V: [[0,0],[1,0],[1,1]],
-  O: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]]  // 6マス
+  O: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]]
 };
 
-const REQUIRED_MIN = 25;
-const REQUIRED_MAX = 30;
+/* 補充優先順（あなたの希望反映） */
+const PREFERRED_ORDER = ['L','S','V','I','o','O'];
 
-/* 優先順（入力以外で補うときにL/Sを優先したい要望を反映） */
-const PREFERRED_ORDER = ['L','S','V','I','o','O']; // 補充する際の試行順
-
-/* ヘルパー */
-function emptyGrid() {
+function emptyGrid(){
   return Array.from({length:GRID_ROWS},()=>Array(GRID_COLS).fill('.'));
 }
 function countFilled(grid){
@@ -68,53 +71,42 @@ function countFilled(grid){
 }
 function canPlace(grid, shape, r, c){
   for(const [dr,dc] of shape){
-    const nr = r+dr, nc = c+dc;
+    const nr=r+dr, nc=c+dc;
     if(nr<0||nr>=GRID_ROWS||nc<0||nc>=GRID_COLS) return false;
-    if(grid[nr][nc] !== '.') return false;
+    if(grid[nr][nc]!=='.') return false;
   }
   return true;
 }
-function doPlace(grid, shape, r, c, ch){
+function doPlace(grid,shape,r,c,ch){
   for(const [dr,dc] of shape) grid[r+dr][c+dc]=ch;
 }
-function doRemove(grid, shape, r, c){
+function doRemove(grid,shape,r,c){
   for(const [dr,dc] of shape) grid[r+dr][c+dc]='.';
 }
 
-/* 文字列をパネル配列に変換（例 "LLSSIO" -> ['L','L','S','S','I','O']） */
 function parseInputString(s){
   return s.split('').filter(ch=>ch in PANELS);
 }
 
-/* メイン探索:
-   - requiredList: まず必ず置くべきパネルの配列（例 ['L','L','S','S','I','O']）
-   - grid: 空グリッド（このモードCでは既存配置は無視）
-   返り値: 解の grid（2D配列）または null
-*/
-function findCompletionFromString(requiredList){
+/* ========= 完成探索 ========= */
+function findCompletion(requiredList, requiredMin, requiredMax){
   const grid = emptyGrid();
+  const required = [...requiredList];
   const solution = {grid:null};
-  const required = [...requiredList]; // copy
 
-  // 探索順列：required を先に置く。required 内の順番は入力順で試しますが、
-  // 必要なら将来ここにソート戦略を入れる（大きいパネルを先になど）。
-  // 置き方の空間的探索が多いので、最初に左上優先で探索します。
-
-  // Helper: 再帰で required を全部置く -> 次に補充フェーズへ
   function placeRequired(idx){
-    if(solution.grid) return true; // 早期終了
-    if(idx >= required.length){
-      // 必須を全部置けた -> 補充フェーズで 25〜30 を目指す
+    if(solution.grid) return true;
+    if(idx>=required.length){
       return fillToRange();
     }
     const ch = required[idx];
     const shape = PANELS[ch];
+
     for(let r=0;r<GRID_ROWS;r++){
       for(let c=0;c<GRID_COLS;c++){
         if(canPlace(grid,shape,r,c)){
           doPlace(grid,shape,r,c,ch);
-          // pruning: if filled > REQUIRED_MAX => undo immediately
-          if(countFilled(grid) <= REQUIRED_MAX){
+          if(countFilled(grid)<=requiredMax){
             if(placeRequired(idx+1)) return true;
           }
           doRemove(grid,shape,r,c);
@@ -124,34 +116,28 @@ function findCompletionFromString(requiredList){
     return false;
   }
 
-  // 補充フェーズ: 現在のgridに足りない分を補って 25..30 にする
-  // 追加パネルは PREFERRED_ORDER の順で試します（なるべくL/Sを使う）
   function fillToRange(){
     if(solution.grid) return true;
-    const filled = countFilled(grid);
-    if(filled >= REQUIRED_MIN && filled <= REQUIRED_MAX){
-      // 完了
+    const filled=countFilled(grid);
+
+    if(filled>=requiredMin && filled<=requiredMax){
       solution.grid = grid.map(row=>[...row]);
       return true;
     }
-    if(filled > REQUIRED_MAX) return false;
+    if(filled > requiredMax) return false;
 
-    // Try adding one more panel (backtracking). We don't have an explicit limit on how many extras;
-    // we try placements until reaching MIN or failing.
     for(const t of PREFERRED_ORDER){
-      const shape = PANELS[t];
+      const shape=PANELS[t];
       for(let r=0;r<GRID_ROWS;r++){
         for(let c=0;c<GRID_COLS;c++){
           if(canPlace(grid,shape,r,c)){
             doPlace(grid,shape,r,c,t);
-            const newFilled = countFilled(grid);
-            if(newFilled <= REQUIRED_MAX){
-              // if reached range, success
-              if(newFilled >= REQUIRED_MIN && newFilled <= REQUIRED_MAX){
+            const f=countFilled(grid);
+            if(f<=requiredMax){
+              if(f>=requiredMin){
                 solution.grid = grid.map(row=>[...row]);
                 return true;
               }
-              // otherwise, recursively try to add more panels
               if(fillToRange()) return true;
             }
             doRemove(grid,shape,r,c);
@@ -162,77 +148,65 @@ function findCompletionFromString(requiredList){
     return false;
   }
 
-  // kick off
   const ok = placeRequired(0);
   return ok ? solution.grid : null;
 }
 
-/* UI: 描画関数 */
-const resultDiv = document.getElementById('result');
+/* ========= UI ========= */
+const resultDiv=document.getElementById('result');
 
 function renderSolutionGrid(grid){
-  if(!grid) return '';
-  let html = '<div class="result-grid">';
+  let html='<div class="result-grid">';
   for(let r=0;r<GRID_ROWS;r++){
     for(let c=0;c<GRID_COLS;c++){
-      const ch = grid[r][c];
-      const cls = (ch && ch!=='.') ? ch : '';
-      // background color comes from CSS classes for I/o/L/S/V/O
+      const ch=grid[r][c];
+      const cls = ch==='.'?'':ch;
       html += `<div class="result-cell ${cls}">${ch==='.'?'':ch}</div>`;
     }
   }
-  html += '</div>';
+  html+='</div>';
   return html;
 }
 
-/* ボタン処理 */
 document.getElementById('runBtn').addEventListener('click',()=>{
-  resultDiv.innerHTML = '<em>探索中…（少し時間がかかる場合があります）</em>';
-  // read input
-  const raw = document.getElementById('panelInput').value || '';
+  const raw=document.getElementById('panelInput').value||'';
   const req = parseInputString(raw);
-  if(req.length === 0){
-    resultDiv.innerHTML = '<p style="color:#a00">入力に有効なパネルがありません。I,o,L,S,V,O のいずれかを含めてください。</p>';
+
+  const reqMin = Number(document.getElementById('fillMin').value)||25;
+  const reqMax = 30;
+
+  if(req.length===0){
+    resultDiv.innerHTML='<p style="color:#a00">有効なパネルがありません。</p>';
     return;
   }
 
-  // Run finder (synchronous). For very large inputs/backtracking this may take time.
+  resultDiv.innerHTML='<em>探索中…</em>';
+
   setTimeout(()=>{
-    const start = performance.now();
-    const sol = findCompletionFromString(req);
-    const elapsed = (performance.now()-start).toFixed(0);
+    const start=performance.now();
+    const sol=findCompletion(req, reqMin, reqMax);
+    const t=(performance.now()-start).toFixed(0);
+
     if(sol){
-      const filled = countFilled(sol);
-      // count how many of each panel used in sol
-      const counts = {};
-      for(const k in PANELS) counts[k]=0;
-      for(let r=0;r<GRID_ROWS;r++){
-        for(let c=0;c<GRID_COLS;c++){
-          const ch = sol[r][c];
-          if(ch && ch !== '.') counts[ch] = (counts[ch]||0)+1;
-        }
-      }
-      // Since O is 6-cell block etc, counts above are cell counts, not panel counts.
-      // We'll compute panel counts by scanning connected components with same label isn't possible here (we placed letters).
-      // But we can display filled count and the filled map.
-      let info = `<p><strong>解が見つかりました（探索 ${elapsed} ms）。合計埋めマス: ${filled}）</strong></p>`;
-      info += renderSolutionGrid(sol);
-      info += `<div class="info">入力: "${raw}" → 必須パネル数: ${req.length}. (補填を行い ${filled} マスに到達)</div>`;
-      resultDiv.innerHTML = info;
+      const filled=countFilled(sol);
+      resultDiv.innerHTML=
+        `<p><strong>解が見つかりました！（${t}ms）埋めマス：${filled}</strong></p>`
+        + renderSolutionGrid(sol)
+        + `<div class="info">入力: "${raw}" → 必須 ${req.length} パネル + 補充で ${filled} マス</div>`;
     } else {
-      resultDiv.innerHTML = `<p style="color:#a00"><strong>解が見つかりませんでした。</strong>（入力のパネルをまず配置し、それを補充して25〜30マスにする探索）</p><div class="info">入力: "${raw}" ・ 探索時間: ${elapsed} ms</div>`;
+      resultDiv.innerHTML=
+        `<p style="color:#a00"><strong>解が見つかりませんでした。</strong></p>
+         <div class="info">入力: "${raw}"・探索 ${t}ms</div>`;
     }
-  }, 10);
+  },10);
 });
 
 document.getElementById('clearBtn').addEventListener('click',()=>{
-  resultDiv.innerHTML = '';
+  resultDiv.innerHTML='';
 });
-
 document.getElementById('clearBtnL').addEventListener('click',()=>{
-  document.getElementById('panelInput').value = '';
+  document.getElementById('panelInput').value='';
 });
-
-  </script>
+</script>
 </body>
 </html>
