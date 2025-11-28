@@ -34,10 +34,10 @@ function getColor(type){
   return {
     I:"purple",
     o:"red",      // 旧O
+    O:"#aaaaaa",  // 新O の色（白っぽいグレー）
     L:"gold",
     S:"blue",
-    V:"green",
-    O:"#aaaaaa"  // 新O の色（白っぽいグレー）
+    V:"green"
   }[type] || "white";
 }
 
@@ -99,9 +99,12 @@ function createGrid(){
         const val = state[r][c];
         if(selectedPanelId === null){
           if(val){
+            // ここから
             selectedPanelId = val.id;
             selectedPanelType = val.type;
             highlightSelectedPanel();
+            // ここまでいらなくない？
+            cell.classList.add("highlight");
           }
         } else {
           if(selectedPanelId.startsWith("palette_")){
