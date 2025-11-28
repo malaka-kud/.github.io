@@ -99,12 +99,10 @@ function createGrid(){
         const val = state[r][c];
         if(selectedPanelId === null){
           if(val){
-            // ここから
             selectedPanelId = val.id;
             selectedPanelType = val.type;
-            highlightSelectedPanel();
-            // ここまでいらなくない？
-            cell.classList.add("highlight");
+            impossiblePanelIds.push(selectedPanelId);
+            renderState(impossiblePanelIds);
           }
         } else {
           if(selectedPanelId.startsWith("palette_")){
@@ -119,6 +117,7 @@ function createGrid(){
             }
             clearSelection();
           }
+            renderState();
         }
       });
 
